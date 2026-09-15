@@ -20,8 +20,15 @@ Testo da tradurre:
 
 export default async function handler(req) {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) return new Response("Manca ANTHROPIC_API_KEY", { status: 500 });
+  // Chiave: ANTHROPIC_API_KEY, oppure qualsiasi variabile il cui valore inizia con sk-ant-
+  let key = process.env.ANTHROPIC_API_KEY;
+  if (!key) {
+    for (const [k, v] of Object.entries(process.env)) if (typeof v === "string" && v.startsWith("sk-ant-")) { key = v; break; }
+  }
+  if (!key) {
+    const names = Object.keys(process.env).filter(k => !k.startsWith("VERCEL") && !k.startsWith("NX_") && k !== "NODE_ENV" && k !== "CI");
+    return new Response("Manca ANTHROPIC_API_KEY. Variabili viste dal runtime: " + (names.join(", ") || "nessuna"), { status: 500 });
+  }
   let text = "";
   try { text = String((await req.json()).text || "").trim(); } catch {}
   if (!text) return new Response("Testo vuoto", { status: 400 });
