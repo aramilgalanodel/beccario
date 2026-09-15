@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beccario</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&display=swap">
+<style>
+:root{
+  --wood:#3b2a1a; --wood-2:#5a4128; --paper:#efe6cf; --ink:#221a12;
+  --meadow:#4f6b3a; --shutter:#a8442d; --milk:#f8f4ea; --muted:#7a6a55;
+  --bg:var(--paper); --fg:var(--ink); --card:var(--milk); --line:#c9b995;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1c140d; --fg:#efe6cf; --card:#2a1e13; --line:#4a3826; --muted:#b6a48a;
+    --wood:#0f0a06; --wood-2:#3b2a1a;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1c140d; --fg:#efe6cf; --card:#2a1e13; --line:#4a3826; --muted:#b6a48a;
+  --wood:#0f0a06; --wood-2:#3b2a1a;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--bg); color:var(--fg);
+  font-family:"Fraunces","Iowan Old Style",Georgia,serif;
+  font-variation-settings:"opsz" 14,"SOFT" 40,"WONK" 1;
+  line-height:1.5; min-height:100vh;
+}
+.sign{
+  background:var(--wood); color:var(--paper);
+  padding:1.6rem 1.25rem 1.3rem; text-align:center;
+  border-bottom:10px solid var(--wood-2);
+  box-shadow:inset 0 -6px 0 #00000040;
+}
+.sign h1{
+  margin:0; font-weight:900; font-size:clamp(3rem,14vw,5.5rem); line-height:.9;
+  letter-spacing:-.02em; font-variation-settings:"opsz" 144,"SOFT" 100,"WONK" 1;
+  text-shadow:3px 3px 0 #000000aa;
+}
+.sign p{margin:.6rem 0 0; font-style:italic; opacity:.85; font-size:1.05rem}
+main{max-width:34rem; margin:0 auto; padding:1.25rem 1rem 3rem}
+label{display:block; font-weight:600; margin:.2rem 0 .4rem}
+textarea{
+  width:100%; min-height:7.5rem; resize:vertical; padding:.9rem;
+  font:inherit; font-size:1.05rem; color:var(--fg); background:var(--card);
+  border:2px solid var(--line); border-radius:6px;
+}
+textarea:focus,button:focus-visible{outline:3px solid var(--meadow); outline-offset:2px}
+.row{display:flex; gap:.6rem; align-items:center; margin-top:.8rem; flex-wrap:wrap}
+button{
+  font:inherit; font-weight:700; cursor:pointer; border:0; border-radius:6px;
+  padding:.8rem 1.3rem; font-size:1.05rem;
+}
+.go{background:var(--shutter); color:#fff; box-shadow:0 3px 0 #6d2a1a}
+.go:active{transform:translateY(2px); box-shadow:0 1px 0 #6d2a1a}
+.go:disabled{opacity:.55; cursor:default}
+.ghost{background:transparent; color:var(--fg); border:2px solid var(--line); padding:.65rem 1rem}
+.hint{color:var(--muted); font-size:.9rem; margin:.5rem 0 0}
+.out{
+  margin-top:1.6rem; background:var(--card); border:2px solid var(--line); border-radius:6px;
+  padding:1.25rem 1.2rem 1rem; min-height:6rem; position:relative;
+}
+.out::before{
+  content:"«"; position:absolute; left:.6rem; top:-1.1rem; font-size:3.2rem; line-height:1;
+  color:var(--shutter); font-weight:900; background:var(--card); padding:0 .3rem;
+}
+.out p{
+  margin:0; font-size:clamp(1.35rem,5.5vw,1.9rem); line-height:1.3; font-weight:500;
+  font-variation-settings:"opsz" 60,"SOFT" 80,"WONK" 1; white-space:pre-wrap;
+}
+.out p.empty{color:var(--muted); font-style:italic; font-size:1.05rem; font-weight:400}
+.out .tools{display:flex; gap:.5rem; justify-content:flex-end; margin-top:.9rem}
+.out .tools button{font-size:.9rem; padding:.45rem .8rem}
+.note{color:var(--muted); font-size:.9rem; margin:.6rem 0 0; min-height:1.2em}
+.thinking{display:inline-block}
+.thinking::after{content:"…"; animation:dots 1.2s steps(4) infinite}
+@keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+@media (prefers-reduced-motion:reduce){.thinking::after{animation:none}}
+footer{text-align:center; color:var(--muted); font-size:.85rem; padding:0 1rem 2rem; font-style:italic}
+</style>
+</head>
+<body>
+<header class="sign">
+  <h1>Beccario</h1>
+  <p>Traduce qualsiasi roba in becchese.</p>
+</header>
+<main>
+  <label for="src">Scrivi quello che vuoi dire</label>
+  <textarea id="src" placeholder="Es. La nostra piattaforma cloud-native abilita sinergie cross-funzionali per accelerare la trasformazione digitale."></textarea>
+  <div class="row">
+    <button class="go" id="go">Fai becco</button>
+    <button class="ghost" id="stop" hidden>Basta</button>
+    <button class="ghost" id="rand">Prova una frase</button>
+  </div>
+  <p class="hint" id="hint"></p>
+
+  <section class="out" aria-live="polite">
+    <p id="out" class="empty">Qui parla il becco. Quando gli dai qualcosa.</p>
+    <div class="tools" id="tools" hidden>
+      <button class="ghost" id="copy">Copia</button>
+      <button class="ghost" id="share">Condividi</button>
+    </div>
+  </section>
+  <p class="note" id="note"></p>
+</main>
+<footer>La capra è il migliore animale che c'è. Dopo la donna.</footer>
+
+<script>
+const SAMPLES = [
+  "Gentile cliente, la informiamo che a seguito di una revisione dei nostri processi interni, i tempi di consegna subiranno un lieve slittamento. Ci scusiamo per il disagio.",
+  "Il nostro obiettivo è diventare il partner di riferimento per la trasformazione digitale delle PMI, attraverso un approccio human-centric e data-driven.",
+  "Ti amo più di quanto le parole possano dire: sei il sole delle mie giornate e la luna delle mie notti.",
+  "La Banca Nazionale ha deciso di mantenere invariati i tassi di interesse, citando un'inflazione sotto controllo e una crescita moderata.",
+  "Ciao ragazzi! In questo video vi mostro la mia morning routine: meditazione, journaling e uno smoothie proteico.",
+  "Il meeting di domani è stato riprogrammato per allineare gli stakeholder sulla roadmap Q4."
+];
+
+const $ = id => document.getElementById(id);
+const src=$("src"), go=$("go"), stop=$("stop"), rand=$("rand"), out=$("out"),
+      tools=$("tools"), note=$("note"), hint=$("hint"), copyBtn=$("copy"), shareBtn=$("share");
+
+let ctl = null;
+
+function say(text, empty){
+  out.textContent = text; out.classList.toggle("empty", !!empty);
+}
+
+async function askBecco(text, signal, onText){
+  const res = await fetch("/api/becco", { method:"POST", signal,
+    headers:{"content-type":"application/json"}, body: JSON.stringify({text}) });
+  if(!res.ok){ const err = new Error(); err.code = res.status===429 ? "rate_limited" : res.status===413 ? "too_long" : "default"; throw err; }
+  const reader = res.body.getReader(), dec = new TextDecoder(); let acc = "";
+  while(true){ const {done, value} = await reader.read(); if(done) break; acc += dec.decode(value,{stream:true}); onText(acc); }
+  return acc;
+}
+
+const COPY = {
+  too_long: "Troppa roba. Il becco legge poco.",
+  rate_limited: "Piano. Il becco è uno solo. Riprova tra un po'.",
+  cancelled: "",
+  default: "Il becco non ha capito. Riprova."
+};
+
+async function translate(){
+  const text = src.value.trim();
+  if(!text){ src.focus(); return; }
+  ctl = new AbortController();
+  go.disabled = true; stop.hidden = false; tools.hidden = true; note.textContent = "";
+  out.classList.remove("empty");
+  out.innerHTML = '<span class="thinking">Il becco pensa</span>';
+  try{
+    const res = await askBecco(text, ctl.signal, t => { out.textContent = t.trim(); });
+    say(res.trim()); tools.hidden = false;
+  }catch(e){
+    const code = e.name==="AbortError" ? "cancelled" : (e.code || "default");
+    if(out.textContent && !out.querySelector(".thinking")) tools.hidden = false;
+    else say("Qui parla il becco. Quando gli dai qualcosa.", true);
+    note.textContent = COPY[code];
+  }finally{
+    go.disabled = false; stop.hidden = true; ctl = null;
+  }
+}
+
+go.onclick = translate;
+stop.onclick = () => ctl?.abort();
+rand.onclick = () => { src.value = SAMPLES[Math.floor(Math.random()*SAMPLES.length)]; translate(); };
+src.addEventListener("keydown", e => { if((e.metaKey||e.ctrlKey) && e.key==="Enter") translate(); });
+
+copyBtn.onclick = async () => {
+  try{ await navigator.clipboard.writeText(out.textContent); note.textContent = "Copiato. Bello."; }
+  catch{ note.textContent = "Non si copia. Seleziona a mano."; }
+};
+shareBtn.onclick = async () => {
+  const data = { title: "Beccario", text: out.textContent };
+  if(navigator.share){ try{ await navigator.share(data);}catch{} }
+  else copyBtn.onclick();
+};
+
+hint.textContent = "Ctrl/⌘ + Invio per fare becco.";
+</script>
+</body>
+</html>
